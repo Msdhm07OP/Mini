@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { ShieldCheck, LogIn, LogOut, AlertTriangle, Loader2, UserPlus } from 'lucide-react';
+import { ShieldCheck, LogIn, LogOut, AlertTriangle, Loader2, UserPlus, ArrowLeft } from 'lucide-react';
+import LandingPage from './LandingPage';
 import api from '../services/api';
 import { clearSession, isSupabaseAuthConfigured, restoreSession, signInWithGoogle, signInWithPassword, signOut, signUpWithPassword } from '../services/auth';
 
@@ -7,12 +8,12 @@ import { clearSession, isSupabaseAuthConfigured, restoreSession, signInWithGoogl
 const ProfileContext = createContext(null);
 export const useProfile = () => useContext(ProfileContext);
 
-function LoginScreen({ onSignedIn, initialError = '' }) {
+function LoginScreen({ onSignedIn, initialError = '', initialMode = 'signin', onBack }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [mode, setMode] = useState('signin');
+  const [mode, setMode] = useState(initialMode);
   const [error, setError] = useState(initialError);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
@@ -48,6 +49,7 @@ function LoginScreen({ onSignedIn, initialError = '' }) {
   };
 
   return <div className="auth-screen min-h-screen grid place-items-center bg-slate-950 p-4">
+    {onBack && <button className="absolute left-4 top-4 flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/10" onClick={onBack}><ArrowLeft className="h-4 w-4" />Home</button>}
     <div className="auth-card w-full max-w-md rounded-2xl border border-slate-200/10 bg-white p-8 shadow-2xl">
       <div className="mb-7 flex items-center gap-3"><div className="grid h-12 w-12 place-items-center rounded-xl bg-indigo-600 text-white"><ShieldCheck className="h-6 w-6" /></div><div><h1 className="text-2xl font-bold text-slate-900">EventSync</h1><p className="text-sm text-slate-500">Secure operations workspace</p></div></div>
       <h2 className="text-lg font-semibold text-slate-900">{registering ? 'Create your account' : 'Sign in to continue'}</h2>
@@ -75,6 +77,7 @@ export default function AuthShell({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
+  const [authView, setAuthView] = useState(null);
 
   const verifyProfile = useCallback(async () => {
     const response = await api.get('/auth/me');
@@ -124,12 +127,13 @@ export default function AuthShell({ children }) {
     }
   };
   const handleSignOut = async () => {
-    await signOut(); setSession(null); setProfile(null); setError('');
+    await signOut(); setSession(null); setProfile(null); setError(''); setAuthView(null);
   };
 
   if (!configured) return <><div className="flex items-center justify-center gap-2 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-900"><AlertTriangle className="h-4 w-4" />Local demo mode: Supabase Auth is not configured. Do not expose this mode publicly.</div>{children}</>;
   if (!ready) return <div className="auth-screen grid min-h-screen place-items-center bg-slate-950 text-white"><div className="flex items-center gap-3"><Loader2 className="h-5 w-5 animate-spin" />Checking secure session…</div></div>;
-  if (!session) return <LoginScreen initialError={error} onSignedIn={handleSignIn} />;
+  if (!session && !authView && !error) return <LandingPage onSignIn={() => setAuthView('signin')} onRegister={() => setAuthView('register')} />;
+  if (!session) return <LoginScreen key={authView || 'signin'} initialMode={authView || 'signin'} initialError={error} onSignedIn={handleSignIn} onBack={() => { setAuthView(null); setError(''); }} />;
   if (error) return <div className="auth-screen grid min-h-screen place-items-center bg-slate-950 p-4"><div className="auth-card w-full max-w-lg rounded-2xl bg-white p-8"><AlertTriangle className="mb-3 h-8 w-8 text-amber-600" /><h1 className="text-xl font-bold text-slate-900">Awaiting approval</h1><p className="mt-2 text-sm text-slate-600">{error}</p><button className="btn btn-primary mt-6" onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" />Sign out</button></div></div>;
 
   return <><div className="flex items-center justify-between gap-3 bg-slate-950 px-4 py-2 text-xs text-white"><div className="flex min-w-0 items-center gap-2"><ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" /><span className="truncate">Secure session · {profile?.display_name || profile?.email || session.user?.email} · {profile?.role}</span></div><button className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10" onClick={handleSignOut}><LogOut className="h-3.5 w-3.5" />Sign out</button></div><ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider></>;
