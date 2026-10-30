@@ -37,7 +37,7 @@ class UserController {
       }
       const result = await query(
         `UPDATE public.user_profiles
-         SET role = $2, client_id = CASE WHEN $2 = 'client' THEN client_id ELSE NULL END, updated_at = NOW()
+         SET role = $2::text, client_id = CASE WHEN $2::text = 'client' THEN client_id ELSE NULL END, updated_at = NOW()
          WHERE user_id = $1::uuid
          RETURNING user_id, role`,
         [req.params.userId, role],
