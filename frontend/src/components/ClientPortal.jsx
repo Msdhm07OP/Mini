@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarCheck, CalendarDays, CheckCircle2, Clock3, Loader2, RefreshCw, Send, XCircle } from 'lucide-react';
+import { CalendarCheck, CalendarDays, CheckCircle2, Clock3, CreditCard, Loader2, RefreshCw, Send, XCircle } from 'lucide-react';
+import PaymentPage, { readPaidBookings } from './PaymentPage';
 import { getMyBookings, getPortalVenues, requestPortalBooking } from '../services/api';
 
 /**
@@ -33,6 +34,8 @@ export default function ClientPortal({ profile }) {
   const [form, setForm] = useState(emptyRequest);
   const [submitting, setSubmitting] = useState(false);
   const [outcome, setOutcome] = useState(null);
+  const [paying, setPaying] = useState(null);
+  const [paid, setPaid] = useState(readPaidBookings);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,6 +73,7 @@ export default function ClientPortal({ profile }) {
       const result = await requestPortalBooking(payload);
       setOutcome(result);
       if (result.success || result.waitlisted) setForm(emptyRequest);
+      if (result.success && result.booking) setPaying(result.booking);
     } catch (err) {
       const data = err.response?.data;
       setOutcome(data && typeof data === 'object'
@@ -153,7 +157,12 @@ export default function ClientPortal({ profile }) {
                   <p className="font-semibold text-slate-900">{booking.event_name}</p>
                   <p className="text-sm text-slate-500">{booking.event_date} · {time(booking.event_start)}–{time(booking.event_end)} · {booking.attendees} guests</p>
                 </div>
-                <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${STATUS_STYLES[booking.status] || 'bg-slate-100 text-slate-600'}`}>{booking.status}</span>
+                <div className="flex items-center gap-2">
+                  {booking.status === 'confirmed' && (paid[booking.id]
+                    ? <span className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">Paid</span>
+                    : <button className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-indigo-500" onClick={() => setPaying(booking)}><CreditCard className="h-3.5 w-3.5" />Pay now</button>)}
+                  <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${STATUS_STYLES[booking.status] || 'bg-slate-100 text-slate-600'}`}>{booking.status}</span>
+                </div>
               </div>
               <p className="mt-2 text-sm text-slate-700">
                 {booking.status === 'confirmed' && <>Confirmed at <strong>{booking.venue_name}</strong>, hall <strong>{booking.hall_name}</strong>{booking.venue_name !== booking.preferred_venue_name && booking.preferred_venue_name ? ` (you asked for ${booking.preferred_venue_name}, which was full)` : ''}.</>}
@@ -165,6 +174,7 @@ export default function ClientPortal({ profile }) {
         </section>
       </div>
     </main>
+    {paying && <PaymentPage booking={paying} onClose={() => setPaying(null)} onPaid={() => setPaid(readPaidBookings())} />}
   </div>;
 }
 
