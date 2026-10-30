@@ -1,0 +1,54 @@
+{
+  "name": "eventsync-backend",
+  "version": "3.0.0",
+  "description": "EventSync 3.0 - Secure event scheduling, resource management, analytics and digital event orders",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/database/migrate.js",
+    "seed": "node src/database/seed.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=tests/unit",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=tests/integration",
+    "test:concurrency": "node tests/concurrency/concurrent-booking.js",
+    "load:test": "node tests/load/load-test.js",
+    "db:status": "node src/database/migrate.js status",
+    "migrate:status": "node src/database/migrate.js status",
+    "dev:testdb": "node src/database/start-test-server.js"
+  },
+  "keywords": [
+    "event",
+    "scheduling",
+    "resource-management",
+    "postgresql",
+    "supabase",
+    "concurrency"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "date-fns": "^3.0.6",
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "autocannon": "^7.14.0",
+    "@types/jest": "^29.5.11"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
