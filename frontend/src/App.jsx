@@ -17,6 +17,7 @@ import {
   Menu,
   Plus,
   Search,
+  ShieldCheck,
   Sparkles,
   UserCheck,
   X,
