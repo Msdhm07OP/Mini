@@ -99,6 +99,13 @@ export const downloadCsv = async (dataset, params = {}) => {
 export const getEventOrders = (eventDate) => unwrap(api.get('/event-orders', { params: eventDate ? { event_date: eventDate } : {} }), 'event_orders');
 export const updateEventOrder = (bookingId, data) => api.put(`/event-orders/${bookingId}`, data).then(r => r.data);
 
+// Client self-service portal
+export const getPortalVenues = () => unwrap(api.get('/portal/venues'), 'venues');
+export const getMyBookings = () => unwrap(api.get('/portal/bookings'), 'bookings');
+export const requestPortalBooking = (data) => api.post('/portal/bookings', data, {
+  headers: { 'Idempotency-Key': globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}` },
+}).then(r => r.data);
+
 // Account approvals (admin only)
 export const getUsers = () => unwrap(api.get('/users'), 'users');
 export const updateUserRole = (userId, role) => api.patch(`/users/${userId}/role`, { role });

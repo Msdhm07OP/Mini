@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ShieldCheck, LogIn, LogOut, AlertTriangle, Loader2, UserPlus } from 'lucide-react';
 import api from '../services/api';
 import { clearSession, isSupabaseAuthConfigured, restoreSession, signInWithGoogle, signInWithPassword, signOut, signUpWithPassword } from '../services/auth';
+
+// The verified EventSync profile, or null in local demo mode (which has full access).
+const ProfileContext = createContext(null);
+export const useProfile = () => useContext(ProfileContext);
 
 function LoginScreen({ onSignedIn, initialError = '' }) {
   const [email, setEmail] = useState('');
@@ -75,10 +79,11 @@ export default function AuthShell({ children }) {
   const verifyProfile = useCallback(async () => {
     const response = await api.get('/auth/me');
     const nextProfile = response.data?.user;
-    if (!nextProfile || !['admin', 'manager', 'staff'].includes(nextProfile.role)) {
+    const approvedClient = nextProfile?.role === 'client' && nextProfile.client_id;
+    if (!nextProfile || !(['admin', 'manager', 'staff'].includes(nextProfile.role) || approvedClient)) {
       throw new Error(nextProfile?.role === 'client'
-        ? 'Your account is registered and awaiting administrator approval. An admin will assign your workspace role shortly.'
-        : `Your EventSync role is ${nextProfile?.role || 'unassigned'}. This workspace requires an admin, manager, or staff role.`);
+        ? 'Your account is registered and awaiting administrator approval. An admin will approve it shortly.'
+        : `Your EventSync role is ${nextProfile?.role || 'unassigned'}. Ask an administrator for access.`);
     }
     setProfile(nextProfile);
     setError('');
@@ -127,5 +132,5 @@ export default function AuthShell({ children }) {
   if (!session) return <LoginScreen initialError={error} onSignedIn={handleSignIn} />;
   if (error) return <div className="auth-screen grid min-h-screen place-items-center bg-slate-950 p-4"><div className="auth-card w-full max-w-lg rounded-2xl bg-white p-8"><AlertTriangle className="mb-3 h-8 w-8 text-amber-600" /><h1 className="text-xl font-bold text-slate-900">Awaiting approval</h1><p className="mt-2 text-sm text-slate-600">{error}</p><button className="btn btn-primary mt-6" onClick={handleSignOut}><LogOut className="mr-2 h-4 w-4" />Sign out</button></div></div>;
 
-  return <><div className="flex items-center justify-between gap-3 bg-slate-950 px-4 py-2 text-xs text-white"><div className="flex min-w-0 items-center gap-2"><ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" /><span className="truncate">Secure session · {profile?.display_name || profile?.email || session.user?.email} · {profile?.role}</span></div><button className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10" onClick={handleSignOut}><LogOut className="h-3.5 w-3.5" />Sign out</button></div>{children}</>;
+  return <><div className="flex items-center justify-between gap-3 bg-slate-950 px-4 py-2 text-xs text-white"><div className="flex min-w-0 items-center gap-2"><ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400" /><span className="truncate">Secure session · {profile?.display_name || profile?.email || session.user?.email} · {profile?.role}</span></div><button className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 hover:bg-white/10" onClick={handleSignOut}><LogOut className="h-3.5 w-3.5" />Sign out</button></div><ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider></>;
 }

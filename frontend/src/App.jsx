@@ -32,7 +32,8 @@ import Simulator from './components/Simulator';
 import Analytics from './components/Analytics';
 import StaffPortal from './components/StaffPortal';
 import UserApprovals from './components/UserApprovals';
-import AuthShell from './components/AuthShell';
+import AuthShell, { useProfile } from './components/AuthShell';
+import ClientPortal from './components/ClientPortal';
 
 const navGroups = [
   {
@@ -54,6 +55,7 @@ const navGroups = [
   },
   {
     label: 'Intelligence',
+    roles: ['admin', 'manager'],
     items: [
       { id: 'simulator', name: 'What-if planner', icon: FlaskConical, description: 'Compare hypothetical schedules before committing' },
       { id: 'analytics', name: 'Analytics', icon: BarChart3, description: 'Explore utilization, demand, and data quality' },
@@ -61,15 +63,19 @@ const navGroups = [
   },
   {
     label: 'Administration',
+    roles: ['admin'],
     items: [
       { id: 'users', name: 'User approvals', icon: UserCheck, description: 'Approve new registrations and manage roles' },
     ],
   },
 ];
 
-const allTabs = navGroups.flatMap((group) => group.items);
 
 function WorkspaceApp() {
+  const profile = useProfile();
+  // Local demo mode has no profile and keeps full access; the API enforces the same roles.
+  const visibleGroups = navGroups.filter((group) => !profile || !group.roles || group.roles.includes(profile.role));
+  const allTabs = visibleGroups.flatMap((group) => group.items);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [bookingDraft, setBookingDraft] = useState(null);
@@ -132,7 +138,7 @@ function WorkspaceApp() {
         </button>
 
         <div className="sidebar-nav-scroll">
-          {navGroups.map((group) => (
+          {visibleGroups.map((group) => (
             <div className="nav-group" key={group.label}>
               <p className="nav-group-label">{group.label}</p>
               <div className="nav-items">
@@ -232,6 +238,11 @@ function WorkspaceApp() {
   );
 }
 
+function RoleHome() {
+  const profile = useProfile();
+  return profile?.role === 'client' ? <ClientPortal profile={profile} /> : <WorkspaceApp />;
+}
+
 export default function App() {
-  return <AuthShell><WorkspaceApp /></AuthShell>;
+  return <AuthShell><RoleHome /></AuthShell>;
 }

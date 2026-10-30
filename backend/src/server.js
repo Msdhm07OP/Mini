@@ -18,6 +18,7 @@ import simulationRoutes from './routes/v1/simulations.js';
 import eventOrderRoutes from './routes/v1/eventOrders.js';
 import authRoutes from './routes/v1/auth.js';
 import userRoutes from './routes/v1/users.js';
+import portalRoutes from './routes/v1/portal.js';
 import { authenticateSupabase, requireOperationsRole, requireManagementRole, requireAdminRole, validateAuthConfiguration } from './middleware/supabaseAuth.js';
 
 dotenv.config();
@@ -136,6 +137,7 @@ app.get('/', (req, res) => {
 // middleware explicitly enters local-demo mode. Production refuses to start without Auth.
 app.use('/api/v1/auth', authenticateSupabase, authRoutes);
 app.use('/api/v1/users', authenticateSupabase, requireAdminRole, userRoutes);
+app.use('/api/v1/portal', authenticateSupabase, portalRoutes);
 app.use('/api/v1/bookings', authenticateSupabase, requireOperationsRole, bookingRoutes);
 app.use('/api/v1/venues', authenticateSupabase, requireOperationsRole, venueRoutes);
 app.use('/api/v1/clients', authenticateSupabase, requireManagementRole, clientRoutes);
@@ -146,6 +148,7 @@ app.use('/api/v1/event-orders', authenticateSupabase, requireOperationsRole, eve
 // Backward-compatible endpoints receive exactly the same auth and role checks.
 app.use('/api/auth', authenticateSupabase, authRoutes);
 app.use('/api/users', authenticateSupabase, requireAdminRole, userRoutes);
+app.use('/api/portal', authenticateSupabase, portalRoutes);
 app.use('/api/bookings', authenticateSupabase, requireOperationsRole, bookingRoutes);
 app.use('/api/venues', authenticateSupabase, requireOperationsRole, venueRoutes);
 app.use('/api/clients', authenticateSupabase, requireManagementRole, clientRoutes);
