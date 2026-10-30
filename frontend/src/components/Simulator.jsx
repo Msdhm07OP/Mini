@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FlaskConical, Plus, Trash2, AlertTriangle, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { FlaskConical, Plus, Trash2, AlertTriangle, CheckCircle2, XCircle, Loader2, Sparkles, CalendarPlus, RotateCcw } from 'lucide-react';
 import { getVenues, runSimulation } from '../services/api';
 
 /**
@@ -22,6 +22,24 @@ const blankRequest = (index) => ({
   staff_requested: 2,
 });
 
+const dateInDays = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+// Three enquiries for the same morning at Venue B (one audio system, already held by
+// "Tech Talk Series" in the demo data). They show a fall-through, competition between
+// hypotheticals, and a hard refusal in a single run.
+const demoScenario = (venues) => {
+  const venueB = venues.find(v => v.name === 'Venue B')?.id || '';
+  return [
+    { label: 'Product demo with live audio', event_date: dateInDays(7), event_start: '10:00', event_end: '12:00', attendees: 80, preferred_venue_id: venueB, projectors_requested: 1, audio_systems_requested: 1, staff_requested: 1 },
+    { label: 'Press briefing', event_date: dateInDays(7), event_start: '10:30', event_end: '12:00', attendees: 70, preferred_venue_id: venueB, projectors_requested: 1, audio_systems_requested: 1, staff_requested: 1 },
+    { label: 'Evening awards night', event_date: dateInDays(7), event_start: '20:00', event_end: '22:00', attendees: 150, preferred_venue_id: venueB, projectors_requested: 1, audio_systems_requested: 1, staff_requested: 2 },
+  ];
+};
+
 const RULE_LABELS = {
   operating_hours: 'Outside operating hours',
   hall_capacity: 'No hall large enough',
@@ -30,7 +48,7 @@ const RULE_LABELS = {
   no_feasible_venue: 'No feasible venue',
 };
 
-export default function Simulator() {
+export default function Simulator({ onBook }) {
   const [venues, setVenues] = useState([]);
   const [requests, setRequests] = useState([blankRequest(0)]);
   const [result, setResult] = useState(null);
@@ -38,7 +56,7 @@ export default function Simulator() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    getVenues().then(setVenues).catch(() => setVenues([]));
+    getVenues().then(response => setVenues(response.data || [])).catch(() => setVenues([]));
   }, []);
 
   const update = (index, field, value) => {
@@ -47,6 +65,8 @@ export default function Simulator() {
 
   const addRequest = () => setRequests(prev => [...prev, blankRequest(prev.length)]);
   const removeRequest = (index) => setRequests(prev => prev.filter((_, i) => i !== index));
+  const loadDemo = () => { setRequests(demoScenario(venues)); setResult(null); setError(null); };
+  const reset = () => { setRequests([blankRequest(0)]); setResult(null); setError(null); };
 
   const submit = async () => {
     setLoading(true);
@@ -78,6 +98,17 @@ export default function Simulator() {
 
   return (
     <div className="space-y-6">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">What-if planner</h2>
+          <p className="mt-1 text-gray-600">Test tentative enquiries against the live schedule before committing to any of them.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn btn-secondary" onClick={reset}><RotateCcw className="mr-2 inline h-4 w-4" />Reset</button>
+          <button type="button" className="btn btn-primary" onClick={loadDemo}><Sparkles className="mr-2 inline h-4 w-4" />Load demo scenario</button>
+        </div>
+      </header>
+
       <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
         <div>
@@ -175,7 +206,20 @@ export default function Simulator() {
         )}
       </section>
 
-      {result && <SimulationResult result={result} />}
+      {result && <SimulationResult result={result} onBook={onBook && ((item) => {
+        const source = requests[item.index] || {};
+        onBook({
+          event_name: item.label,
+          event_date: item.event_date,
+          event_start: item.event_start,
+          event_end: item.event_end,
+          attendees: item.attendees,
+          preferred_venue_id: item.venue_id,
+          projectors_requested: Number(source.projectors_requested) || 0,
+          audio_systems_requested: Number(source.audio_systems_requested) || 0,
+          staff_requested: Number(source.staff_requested) || 0,
+        });
+      })} />}
     </div>
   );
 }
@@ -191,7 +235,7 @@ function Field({ label, children }) {
   );
 }
 
-function SimulationResult({ result }) {
+function SimulationResult({ result, onBook }) {
   const { summary, results } = result;
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-5">
@@ -222,6 +266,12 @@ function SimulationResult({ result }) {
                   </span>
                 </p>
                 <p className="mt-1 text-sm text-gray-800">{item.explanation}</p>
+                {item.accepted && onBook && (
+                  <button type="button" onClick={() => onBook(item)}
+                    className="mt-2 inline-flex items-center gap-1 rounded-md border border-green-600 bg-white px-3 py-1 text-sm font-medium text-green-700 hover:bg-green-100">
+                    <CalendarPlus className="h-4 w-4" aria-hidden="true" /> Book this at {item.venue_name}
+                  </button>
+                )}
                 {!item.accepted && item.blocking_rule && (
                   <p className="mt-1 text-xs font-medium uppercase tracking-wide text-red-700">
                     {RULE_LABELS[item.blocking_rule] || item.blocking_rule}

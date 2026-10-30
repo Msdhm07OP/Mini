@@ -237,7 +237,7 @@ class SimulationService {
   describeShortfall(venue, verdict, overlapping) {
     const LABELS = { projectors: 'projectors', audio: 'audio systems', staff: 'support staff' };
     const parts = (verdict.shortages || []).map(item =>
-      `${LABELS[item.resource] || item.resource} reach ${item.requiredAtPeak} in use at ${item.time} against a limit of ${item.capacity}`
+      `${LABELS[item.resource] || item.resource} (${item.requiredAtPeak} needed at ${item.time}, only ${item.capacity} available)`
     );
     const held = overlapping.map(b => b.title).filter(Boolean).slice(0, 3);
     const detail = parts.length

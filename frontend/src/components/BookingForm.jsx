@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createBooking, createBookingSeries, getVenues, getClients, createClient, getAlternatives } from '../services/api';
 import { AlertCircle, CheckCircle, Lightbulb } from 'lucide-react';
 
-export default function BookingForm({ onSuccess }) {
+export default function BookingForm({ onSuccess, initialValues }) {
   const [venues, setVenues] = useState([]);
   const [clients, setClients] = useState([]);
   const [showNewClient, setShowNewClient] = useState(false);
@@ -26,6 +26,7 @@ export default function BookingForm({ onSuccess }) {
     audio_systems_requested: 0,
     staff_requested: 0,
     waitlist_if_full: false,
+    ...initialValues,
   });
 
   const [newClient, setNewClient] = useState({

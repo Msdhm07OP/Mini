@@ -72,6 +72,7 @@ const allTabs = navGroups.flatMap((group) => group.items);
 function WorkspaceApp() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [bookingDraft, setBookingDraft] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
@@ -84,6 +85,7 @@ function WorkspaceApp() {
   }, [commandQuery]);
 
   const navigateTo = (tabId) => {
+    if (tabId === 'create') setBookingDraft(null);
     setActiveTab(tabId);
     setMobileNavOpen(false);
     setCommandOpen(false);
@@ -190,12 +192,12 @@ function WorkspaceApp() {
         <main className="app-main-content">
           <div className="page-transition" key={activeTab}>
             {activeTab === 'dashboard' && <Dashboard key={refreshTrigger} onCreateBooking={() => navigateTo('create')} onViewBookings={() => navigateTo('bookings')} />}
-            {activeTab === 'create' && <BookingForm onSuccess={handleBookingSuccess} />}
+            {activeTab === 'create' && <BookingForm key={bookingDraft ? JSON.stringify(bookingDraft) : 'blank'} initialValues={bookingDraft || undefined} onSuccess={handleBookingSuccess} />}
             {activeTab === 'bookings' && <BookingList refreshTrigger={refreshTrigger} />}
             {activeTab === 'operations' && <OperationsBoard refreshTrigger={refreshTrigger} />}
             {activeTab === 'waitlist' && <Waitlist refreshTrigger={refreshTrigger} />}
             {activeTab === 'decisions' && <DecisionLog refreshTrigger={refreshTrigger} />}
-            {activeTab === 'simulator' && <Simulator />}
+            {activeTab === 'simulator' && <Simulator onBook={(draft) => { setBookingDraft(draft); setActiveTab('create'); }} />}
             {activeTab === 'analytics' && <Analytics key={refreshTrigger} />}
             {activeTab === 'staff' && <StaffPortal refreshTrigger={refreshTrigger} />}
             {activeTab === 'users' && <UserApprovals refreshTrigger={refreshTrigger} />}
