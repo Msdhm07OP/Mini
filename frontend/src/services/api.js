@@ -98,3 +98,7 @@ export const downloadCsv = async (dataset, params = {}) => {
 // Digital staff event orders (BEOs)
 export const getEventOrders = (eventDate) => unwrap(api.get('/event-orders', { params: eventDate ? { event_date: eventDate } : {} }), 'event_orders');
 export const updateEventOrder = (bookingId, data) => api.put(`/event-orders/${bookingId}`, data).then(r => r.data);
+
+// Account approvals (admin only)
+export const getUsers = () => unwrap(api.get('/users'), 'users');
+export const updateUserRole = (userId, role) => api.patch(`/users/${userId}/role`, { role });

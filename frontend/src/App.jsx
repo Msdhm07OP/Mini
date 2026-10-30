@@ -17,8 +17,8 @@ import {
   Menu,
   Plus,
   Search,
-  ShieldCheck,
   Sparkles,
+  UserCheck,
   X,
 } from 'lucide-react';
 import Dashboard from './components/Dashboard';
@@ -30,6 +30,7 @@ import DecisionLog from './components/DecisionLog';
 import Simulator from './components/Simulator';
 import Analytics from './components/Analytics';
 import StaffPortal from './components/StaffPortal';
+import UserApprovals from './components/UserApprovals';
 import AuthShell from './components/AuthShell';
 
 const navGroups = [
@@ -55,6 +56,12 @@ const navGroups = [
     items: [
       { id: 'simulator', name: 'What-if planner', icon: FlaskConical, description: 'Compare hypothetical schedules before committing' },
       { id: 'analytics', name: 'Analytics', icon: BarChart3, description: 'Explore utilization, demand, and data quality' },
+    ],
+  },
+  {
+    label: 'Administration',
+    items: [
+      { id: 'users', name: 'User approvals', icon: UserCheck, description: 'Approve new registrations and manage roles' },
     ],
   },
 ];
@@ -190,6 +197,7 @@ function WorkspaceApp() {
             {activeTab === 'simulator' && <Simulator />}
             {activeTab === 'analytics' && <Analytics key={refreshTrigger} />}
             {activeTab === 'staff' && <StaffPortal refreshTrigger={refreshTrigger} />}
+            {activeTab === 'users' && <UserApprovals refreshTrigger={refreshTrigger} />}
           </div>
           <footer className="app-footer">
             <span>EventSync <span className="footer-version">OPERATIONS SUITE</span></span>
