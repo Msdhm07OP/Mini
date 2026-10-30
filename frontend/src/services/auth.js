@@ -59,6 +59,21 @@ export async function signInWithPassword(email, password) {
   return saveSession(session);
 }
 
+// Supabase returns a session immediately when email confirmation is disabled;
+// otherwise it returns only the user and the caller must confirm by email first.
+// The on_auth_user_created trigger creates the EventSync profile with the client role.
+export async function signUpWithPassword(email, password, displayName) {
+  if (!isSupabaseAuthConfigured) throw new Error('Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY first.');
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const payload = await requestAuth(`signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    email: email.trim(),
+    password,
+    data: { display_name: displayName.trim() || undefined },
+  });
+  if (payload.access_token) return { session: saveSession(payload), confirmationRequired: false };
+  return { session: null, confirmationRequired: true };
+}
+
 export async function signInWithGoogle() {
   if (!isSupabaseAuthConfigured) throw new Error('Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY first.');
   const challenge = await createPkceChallenge();
